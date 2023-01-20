@@ -6,14 +6,15 @@ class Block {
     health;
     height;
     width;
+    cooldown;
 
-    constructor(x = 0, y = 0, height = 10, width = 50, health = 2) {
+    constructor(x = 0, y = 0, height = 10, width = 50) {
         Block.counter++;
         this.x = x;
         this.y = y;
         this.height = height;
         this.width = width;
-        this.health = health;
+        this.health = Math.ceil(Math.random()*this.colors.length);
     }
 
     render() {

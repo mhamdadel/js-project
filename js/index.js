@@ -16,12 +16,12 @@ let wDown = false;
 let sDown = false;
 let aDown = false;
 let dDown = false;
-let maxBlocks = 10;
+let maxBlocks = 13;
 let blocks = [];
 let makeBlock = 2;
 let hits = 0;
 let currentHits = 0;
-
+let newLineNow = 0;
 
 function start() {
 	clear();
@@ -35,11 +35,13 @@ function start() {
 	renderPlayers();
 	renderBall();
 	renderBlocks();
+	renderRowOfBlocks();
+
 
 	for (let i = 0; i < blocks.length; i++) {
 		blocks[i].render();
 	}
-	if(gameOver == 0){
+	if (gameOver == 0) {
 		requestAnimationFrame(start);
 	}
 }
@@ -53,32 +55,51 @@ function Ball(x, y) {
 	this.yVel = 0;
 	this.decel = 0.04;
 	this.size = 10;
+	this.cooldown = 0;
 }
 
 function renderBlocks() {
 	if (makeBlock == 2) {
-		for (let g = 0; g < maxBlocks; g++){
-			let yVal = 0;
-			let xVel = 0;
-			for (let i = 0; i < maxBlocks; i++) {
-				xVel = 0;
-				prevBlock = blocks[g + i - 1] || 0;
-				prevWdthSize = prevBlock.x + prevBlock.width;
-				blocks[i] = new Block(xVel, yVal, prevBlock.height || 20, prevBlock.width || 150);
-				xVel += prevWdthSize + 5;
+		let sumWidth = 0;
+		blocks[0] = new Block(0, 0, 20, 100);
+		sumWidth += blocks[0].width;
+		let xCur = 0;
+		let yCur = 0;
+		for (let i = 1; i < maxBlocks * 5; i++) {
+			prevBlock = blocks[i - 1];
+			if (prevBlock) {
+				if (sumWidth + blocks[i - 1].width + 5 < canvas.width) {
+					xCur += prevBlock.width + 5;
+				} else {
+					xCur = 0;
+					sumWidth = 0;
+					yCur += prevBlock.height + 5;
+				}
+				blocks[i] = new Block(xCur, yCur, prevBlock.height, prevBlock.width);
+				sumWidth += blocks[i].width;
 			}
-			yVal += 35;
 		}
 		makeBlock = 0;
 	}
 }
 
 function renderRowOfBlocks() {
-	if (currentHits == 10) {
-		for (let i = 1; i < maxBlocks; i++) {
-			prevBlock = blocks[i - 1];
-			prevWdthSize = prevBlock.x + prevBlock.width;
-			blocks[i] = new Block(prevWdthSize + 10, 100, prevBlock.height, prevBlock.width);
+	if (currentHits >= 15) {
+		let sumWidth = 0;
+		sumWidth += blocks[0].width;
+		newLineNow = 1;
+		let xCur = 0;
+		let yCur = 0;
+		let counter = maxBlocks;
+		ball.y += 25;
+		blocks.reduce(function(sum,el){
+			el.y += 25
+		})
+		while (counter){
+			xCur += prevBlock.width + 5;
+			blocks.push(new Block(xCur, yCur, 20, 100));
+			sumWidth += 105;
+			counter--;
 		}
 		currentHits = 0;
 	}
@@ -107,35 +128,51 @@ function checkPlayers_BallCollision() {
 	for (let i = 0; i < blocks.length; i++) {
 		let yDir = (ball.y > blocks[i].y) ? -1 : 1;
 		let xDir = (ball.x > blocks[i].x) ? -1 : 1;
-
 		if (between(ball.y + (yDir * ball.size), blocks[i].y, blocks[i].y + blocks[i].height)
 			&& between(ball.x + (xDir * ball.size), blocks[i].x, blocks[i].x + blocks[i].width)
 		) {
-			if (blocks[i] instanceof Block) {
-				currentHits++;
-				hits++;
-				ball.xVel *= -1;
-				ball.yVel *= -1;
-				blocks[i].health--;
-				if (blocks[i].health <= 0) {
-					blocks.splice(i, 1);
+			if (!ball.cooldown) {
+				if (blocks[i] instanceof Block) {
+					if(ball.y > blocks[i].y){
+						ball.y = blocks[i].y + blocks[i].height +  .2;
+					}else{
+						ball.y = blocks[i].y - .2;
+					}
+					currentHits++;
+					hits++;
+					ball.xVel *= -1;
+					ball.yVel *= -1;
+					blocks[i].health--;
+					if (blocks[i].health <= 0) {
+						blocks.splice(i, 1);
+					}
 				}
+			} else {
+				ball.cooldown = 26;
 			}
 		}
 	}
 
 	let yDir = (ball.y > player.y) ? -1 : 1;
 	let xDir = (ball.x > player.x) ? -1 : 1;
+	//console.log(`between(${ball.x} + (${xDir} * ${ball.size}), ${player.x}, ${player.x} + ${player.width})`)
 	if (between(ball.y + (yDir * ball.size), player.y, player.y + player.height)
 		&& between(ball.x + (xDir * ball.size), player.x, player.x + player.width)
 	) {
-		if (player instanceof Player ) {
-			xMinOrPos = ball.x < (player.x + player.width/2) ? -1 : ball.x > (player.x + player.width/2) ? 1 : 0 ;
-			xDirBall = ((player.x + player.width/2) / ball.x)/2;
+		if (player instanceof Player) {
+			xMinOrPos = ball.x < (player.x + player.width / 2) ? -1 : ball.x > (player.x + player.width / 2) ? 1 : 0;
+			xDirBall = ((player.x + player.width / 2) / ball.x) / 2;
 			//ball.xVel = ( (xMinOrPos) * (((ball.x + ball.size/2) % (player.x + player.width/2)) /5 )) ;
-			ball.xVel = ( (xMinOrPos) * (((ball.x + ball.size/2) / (player.x + player.width/2) ) % 1) ) * ball.xspeed ;
-			console.log(( (xMinOrPos) * (((ball.x + ball.size/2) / (player.x + player.width/2) ) % 1) ) * ball.xspeed)
-			
+			if (xMinOrPos > 0) {
+				ball.xVel = (((xMinOrPos) * (ball.x - (player.width / 2 + player.x)) / player.width)) * ball.xspeed;
+			} else if (xMinOrPos < 0) {
+				ball.xVel = ((xMinOrPos) * Math.abs(((ball.x - player.x) / player.width) - 1) + .5) * ball.xspeed;
+			}
+			// console.log(Math.abs(((ball.x - player.x) / player.width)-1))
+			// console.log((ball.x - (player.width/2 + player.x)) / player.width)
+			//console.log(( (xMinOrPos) * (ball.x / (player.x + player.width /2)) % 1 ) * ball.xspeed);
+			// console.log(( (xMinOrPos) * (((ball.x + ball.size/2) / (player.x + player.width/2) ) % 1) ) * ball.xspeed)
+
 			ball.yVel = -1 * ball.speed;
 		}
 	}
