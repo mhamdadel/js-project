@@ -47,3 +47,7 @@ marquee {
 	position: absolute;
 	bottom: 5vh;
 }
+
+ul li {
+	display: inline-block;
+}

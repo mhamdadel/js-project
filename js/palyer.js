@@ -10,6 +10,7 @@ class Player {
 	maxSpeed = 10;
     width = 150;
     height = 20;
+    health = 2;
 
     constructor(x = 0, y = 0) {
         this.x = x;
