@@ -44,14 +44,14 @@ function start() {
 	renderRowOfBlocks();
 	heartCounter.innerText = player.health;
 
-	if(bonuses.length > 0){
-		bonuses.forEach(function(el){
+	if (bonuses.length > 0) {
+		bonuses.forEach(function (el) {
 			el.y += 2;
 			el.draw();
 		});
 	}
 
-	if(maxYNow >= player.y - 20){
+	if (maxYNow >= player.y - 20) {
 		gameOver = 1;
 	}
 
@@ -60,9 +60,9 @@ function start() {
 	}
 	if (gameOver == 0) {
 		requestAnimationFrame(start);
-	}else if (gameOver === 1){
+	} else if (gameOver === 1) {
 		console.log("Game Over you loset")
-	} 
+	}
 }
 
 function renderBlocks() {
@@ -133,27 +133,6 @@ function movePlayers() {
 	player.x += player.xVel;
 }
 
-class Heart {
-	constructor(x, y) {
-		this.x = x;
-		this.y = y;
-		this.size = 2;
-		this.src = "images/heart.png";
-		this.img = new Image();
-		this.img.src = this.src;
-		this.img.height = this.size;
-		this.img.width = this.size;
-	}
-
-	draw() {
-		c.save();
-		c.beginPath();
-		c.drawImage(this.img, this.x, this.y);
-		c.closePath();
-		c.restore();
-	}
-}
-
 function mouse() {
 	canvas.addEventListener("mouseenter", function () {
 		document.body.style.cursor = "none";
@@ -162,25 +141,32 @@ function mouse() {
 		document.body.style.cursor = "pointer";
 	});
 	canvas.addEventListener("mousemove", function (e) {
-		if( ( (player.x + player.width / 2) / e.clientX) < 1 ){
+		if (((player.x + player.width / 2) / e.clientX) < 1) {
 			player.x += player.maxSpeed;
-		}else if (( (player.x + player.width / 2) / e.clientX) === 1 ){
+		} else if (((player.x + player.width / 2) / e.clientX) === 1) {
 			player.x = player.x;
-		}else{
+		} else {
 			player.x -= player.maxSpeed;
 		}
 	});
 }
 
-function checkBonuse_PlayerCollision(){
+function checkBonuse_PlayerCollision() {
 	for (const bon of bonuses) {
-		let yDir = (bon.y > player.y) ? -1 : 1;
 		let xDir = (bon.x > player.x) ? -1 : 1;
-		if (between(bon.y + (yDir * bon.size), player.y, player.y + player.height)
-			&& between(bon.x + (xDir * bon.size), player.x, player.x + player.width) ) {
-				bonuses.splice(bonuses.indexOf(bon),1);
+		if (between(bon.y + bon.size, player.y, player.y + player.height)
+			&& between(bon.x + (xDir * bon.size), player.x, player.x + player.width)) {
+			if (bon instanceof Heart) {
+				bonuses.splice(bonuses.indexOf(bon), 1);
 				player.health++;
-			} 
+			} else if (bon instanceof GetLarge) {
+				bonuses.splice(bonuses.indexOf(bon), 1);
+				player.width += 2;
+			} else if (bon instanceof GetSmall) {
+				bonuses.splice(bonuses.indexOf(bon), 1);
+				player.width -= 2;
+			}
+		}
 	}
 }
 
@@ -203,10 +189,18 @@ function checkBlocks_BallCollision() {
 					ball.yVel *= -1;
 					blocks[i].health--;
 					if (blocks[i].health <= 0) {
-						if( between(Math.floor(Math.random()*30), 5, 10) ){
-							let xBonuse = blocks[i].x + blocks[i].width/2
-							let yBonuse = blocks[i].y + blocks[i].height/2
-							let bonuse = new Heart(xBonuse, yBonuse);
+						if (between(Math.floor(Math.random() * 30), 5, 10)) {
+							let xBonuse = blocks[i].x + blocks[i].width / 2
+							let yBonuse = blocks[i].y + blocks[i].height / 2
+							let bonuse;
+							let randBonType = Math.floor(Math.random() * 3);
+							if(randBonType === 0){
+								bonuse = new Heart(xBonuse, yBonuse)
+							}else if(randBonType === 1) {
+								bonuse = new GetLarge(xBonuse, yBonuse)
+							}else if(randBonType === 2){
+								bonuse = new GetSmall(xBonuse, yBonuse)
+							}
 							bonuse.draw();
 							bonuses.push(bonuse);
 						}
@@ -269,7 +263,7 @@ function moveBall() {
 
 function checkBallBounds() {
 	if (ball.y + ball.size >= canvas.height) {
-		if(player.health <= 0){
+		if (player.health <= 0) {
 			gameOver = 1;
 		}
 		player.health--;
@@ -286,7 +280,7 @@ function checkPlayersBounds() {
 		player.x = 0;
 		player.xVel *= -0.5;
 	}
-	
+
 	if (player.y + player.size > canvas.height) {
 		player.y = canvas.height - player.size;
 		player.yVel *= -0.5;
