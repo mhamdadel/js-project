@@ -9,13 +9,13 @@ let err = document.getElementById("err");
 let heartCounter = document.getElementById("heartCounter");
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
-let init = requestAnimationFrame(start);
 let gameOver = 0;
 let wDown = false;
 let sDown = false;
 let aDown = false;
 let dDown = false;
 let maxBlocks = 13;
+let blockWidthNow = 100;
 let blocks = [];
 let bonuses = [];
 let balls = [];
@@ -24,14 +24,21 @@ let hits = 0;
 let currentHits = 0;
 let newLineNow = 0;
 let maxYNow = 0;
+let movementControl = 1;
 player = new Player(cw * .5 - 75, ch - 50);
 balls[0] = new Ball(cw / 2, ch - 58);
+
 
 function start() {
 	clear();
 	renderBackground();
-	checkKeyboardStatus();
-	mouse();
+	
+	if (movementControl === 1){
+		mouse();
+	}else if (movementControl === 2){
+		checkKeyboardStatus();
+	}
+
 	checkPlayersBounds();
 	checkBallBounds();
 	checkPlayers_BallCollision();
@@ -41,7 +48,8 @@ function start() {
 	moveBall();
 	renderPlayers();
 	renderBall();
-	renderBlocks();
+	//renderBlocks();
+	// Level.two();
 	renderRowOfBlocks();
 	heartCounter.innerText = player.health;
 
@@ -93,22 +101,28 @@ function renderBlocks() {
 }
 
 function renderRowOfBlocks() {
-	if (currentHits >= 15) {
+	if (currentHits >= 50) {
 		let sumWidth = 0;
 		sumWidth += blocks[0].width;
 		newLineNow = 1;
 		let xCur = 0;
 		let yCur = 0;
-		let counter = maxBlocks;
-		balls.reduce(function (sum, el) {
-			el.y += 25
-		})
+		blockWidthNow *= .8;
+		let counter = Math.round(cw / blockWidthNow);
+		for ( let ball of balls ) {
+			ball.y += 21
+		}
+
+
+
 		blocks.reduce(function (sum, el) {
 			el.y += 25
 		})
+		blocks.push(new Block(xCur, yCur, 20, blockWidthNow));
+		let prevBlock = blocks[blocks.length - 1]; 
 		while (counter) {
 			xCur += prevBlock.width + 5;
-			blocks.push(new Block(xCur, yCur, 20, 100));
+			blocks.push(new Block(xCur, yCur, 20, blockWidthNow));
 			sumWidth += 105;
 			counter--;
 		}
