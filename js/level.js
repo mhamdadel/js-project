@@ -1,5 +1,6 @@
 class Level {
     static one() {
+        newRowOfBlockEvery = 50;
         if (makeBlock == 2) {
             let x = 0;
             let y = 0;
@@ -20,6 +21,7 @@ class Level {
     }
 
     static two() {
+        newRowOfBlockEvery = 25;
         if (makeBlock == 2) {
             let x = 0;
             let y = 0;

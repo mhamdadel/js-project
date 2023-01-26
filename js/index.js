@@ -25,6 +25,8 @@ let currentHits = 0;
 let newLineNow = 0;
 let maxYNow = 0;
 let movementControl = 1;
+let newRowOfBlockEvery = 50;
+
 player = new Player(cw * .5 - 75, ch - 50);
 balls[0] = new Ball(cw / 2, ch - 58);
 
@@ -32,10 +34,10 @@ balls[0] = new Ball(cw / 2, ch - 58);
 function start() {
 	clear();
 	renderBackground();
-	
-	if (movementControl === 1){
+
+	if (movementControl === 1) {
 		mouse();
-	}else if (movementControl === 2){
+	} else if (movementControl === 2) {
 		checkKeyboardStatus();
 	}
 
@@ -67,14 +69,23 @@ function start() {
 	for (let i = 0; i < blocks.length; i++) {
 		blocks[i].render();
 	}
-	if (gameOver == 0) {
+	if (gameOver === 0) {
 		requestAnimationFrame(start);
 	} else if (gameOver === 1) {
 		console.log("Game Over you loset")
+	} else if (gameOver === 2) {
+		gameOver = 1;
+		setTimeout(function () {
+			gameOver = 0;
+			reset();
+			requestAnimationFrame(start);
+		}, 2000);
+
 	}
 }
 
 function renderBlocks() {
+	newRowOfBlockEvery = 10;
 	if (makeBlock == 2) {
 		let sumWidth = 0;
 		blocks[0] = new Block(0, 0, 20, 100);
@@ -101,7 +112,7 @@ function renderBlocks() {
 }
 
 function renderRowOfBlocks() {
-	if (currentHits >= 50) {
+	if (currentHits >= newRowOfBlockEvery) {
 		let sumWidth = 0;
 		sumWidth += blocks[0].width;
 		newLineNow = 1;
@@ -109,17 +120,15 @@ function renderRowOfBlocks() {
 		let yCur = 0;
 		blockWidthNow *= .8;
 		let counter = Math.round(cw / blockWidthNow);
-		for ( let ball of balls ) {
+		for (let ball of balls) {
 			ball.y += 21
 		}
-
-
 
 		blocks.reduce(function (sum, el) {
 			el.y += 25
 		})
 		blocks.push(new Block(xCur, yCur, 20, blockWidthNow));
-		let prevBlock = blocks[blocks.length - 1]; 
+		let prevBlock = blocks[blocks.length - 1];
 		while (counter) {
 			xCur += prevBlock.width + 5;
 			blocks.push(new Block(xCur, yCur, 20, blockWidthNow));
@@ -132,16 +141,9 @@ function renderRowOfBlocks() {
 }
 
 function reset() {
-
-	let score1 = player.score;
-	let out;
-
-	player = new Player(cw * .4, ch - 50);
-
-	wDown = false;
-	sDown = false;
-	aDown = false;
-	dDown = false;
+	player.x = cw * .5;
+	player.y = ch - 50;
+	balls[0] = new Ball(cw / 2, ch - 58);
 }
 
 function movePlayers() {
@@ -203,42 +205,41 @@ function checkBonuse_PlayerCollision() {
 function checkBlocks_BallCollision() {
 	for (let i = 0; i < blocks.length; i++) {
 		for (let g = 0; g < balls.length; g++) {
-
-
-			let yDir = (balls[g].y > blocks[i].y) ? -1 : 1;
-			let xDir = (balls[g].x > blocks[i].x) ? -1 : 1;
-			if (between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
+			let yDir = (balls[g].y >= blocks[i].y) ? -1 : 1;
+			let xDir = (balls[g].x >= blocks[i].x) ? -1 : 1;
+			if ( between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
 				&& between(balls[g].x + (xDir * balls[g].size), blocks[i].x, blocks[i].x + blocks[i].width)
 			) {
-				if (!balls[g].cooldown) {
-					if (blocks[i] instanceof Block) {
-						currentHits++;
-						hits++;
+				if (blocks[i] instanceof Block) {
+					currentHits++;
+					hits++;
+					if(balls[g].x + (xDir * balls[g].size) >= blocks[i].x + blocks[i].width){
+						console.log(balls[g].x + (xDir * balls[g].size),blocks[i].x + blocks[i].width)
+						balls[g].xVel *= -1;
+					}else{
 						balls[g].yVel *= -1;
-						blocks[i].health--;
-						if (blocks[i].health <= 0) {
-							if (between(Math.floor(Math.random() * 30), 5, 10)) {
-								let xBonuse = blocks[i].x + blocks[i].width / 2
-								let yBonuse = blocks[i].y + blocks[i].height / 2
-								let bonuse;
-								let randBonType = Math.floor(Math.random() * 4);
-								if (randBonType === 0) {
-									bonuse = new Heart(xBonuse, yBonuse);
-								} else if (randBonType === 1) {
-									bonuse = new GetLarge(xBonuse, yBonuse);
-								} else if (randBonType === 2) {
-									bonuse = new GetSmall(xBonuse, yBonuse);
-								} else if (randBonType === 3) {
-									bonuse = new TribleBall(xBonuse, yBonuse);
-								}
-								bonuse.draw();
-								bonuses.push(bonuse);
-							}
-							blocks.splice(i, 1);
-						}
 					}
-				} else {
-					balls[g].cooldown = 26;
+					blocks[i].health--;
+					if (blocks[i].health <= 0) {
+						if (between(Math.floor(Math.random() * 30), 5, 10)) {
+							let xBonuse = blocks[i].x + blocks[i].width / 2
+							let yBonuse = blocks[i].y + blocks[i].height / 2
+							let bonuse;
+							let randBonType = Math.floor(Math.random() * 4);
+							if (randBonType === 0) {
+								bonuse = new Heart(xBonuse, yBonuse);
+							} else if (randBonType === 1) {
+								bonuse = new GetLarge(xBonuse, yBonuse);
+							} else if (randBonType === 2) {
+								bonuse = new GetSmall(xBonuse, yBonuse);
+							} else if (randBonType === 3) {
+								bonuse = new TribleBall(xBonuse, yBonuse);
+							}
+							bonuse.draw();
+							bonuses.push(bonuse);
+						}
+						blocks.splice(i, 1);
+					}
 				}
 			}
 
@@ -260,7 +261,8 @@ function checkPlayers_BallCollision() {
 				xDirBall = ((player.x + player.width / 2) / balls[i].x) / 2;
 				if (xMinOrPos > 0) {
 					balls[i].xVel = (((xMinOrPos) * (balls[i].x - (player.width / 2 + player.x)) / player.width)) * balls[i].xspeed;
-				} else if (xMinOrPos < 0) {
+
+				} else {
 					balls[i].xVel = ((xMinOrPos) * Math.abs(((balls[i].x - player.x) / player.width) - 1) + .5) * balls[i].xspeed;
 				}
 				balls[i].yVel = -1 * balls[i].speed;
@@ -301,13 +303,13 @@ function moveBall() {
 function checkBallBounds() {
 	for (let i = 0; i < balls.length; i++) {
 		if (balls[i].y + balls[i].size >= canvas.height) {
-			if (player.health <= 0) {
+			if (player.health <= 0 && balls.length < 2) {
 				gameOver = 1;
-			}
-			if(balls.length < 2){
+			} else if (balls.length < 2) {
+				gameOver = 2;
 				player.health--;
-			}else{
-				balls.splice(i,1);
+			} else {
+				balls.splice(i, 1);
 			}
 		}
 	}
