@@ -28,7 +28,7 @@ let movementControl = 1;
 let newRowOfBlockEvery = 50;
 
 player = new Player(cw * .5 - 75, ch - 50);
-balls[0] = new Ball(cw / 2, ch - 58);
+balls[0] = new Ball(cw / 2, ch - 50);
 
 
 function start() {
@@ -50,8 +50,6 @@ function start() {
 	moveBall();
 	renderPlayers();
 	renderBall();
-	//renderBlocks();
-	// Level.two();
 	renderRowOfBlocks();
 	heartCounter.innerText = player.health;
 
@@ -71,8 +69,10 @@ function start() {
 	}
 	if (gameOver === 0) {
 		requestAnimationFrame(start);
-	} else if (gameOver === 1) {
-		console.log("Game Over you loset")
+	} else if (gameOver === 1 && player.health <= 0) {
+		console.log("gameOver")
+		document.getElementById("gameOverMenu").style.display = "block";
+		document.getElementById("gameOverScore").innerText = hits;
 	} else if (gameOver === 2) {
 		gameOver = 1;
 		setTimeout(function () {
@@ -80,8 +80,19 @@ function start() {
 			reset();
 			requestAnimationFrame(start);
 		}, 2000);
-
 	}
+}
+
+function unpause() {
+	gameOver = 0
+	menuPause.style.display = "none";
+	start();
+}
+
+function pause() {
+	gameOver = 1
+	menuPause.style.display = "block";
+	console.log("pause")
 }
 
 function renderBlocks() {
@@ -143,7 +154,7 @@ function renderRowOfBlocks() {
 function reset() {
 	player.x = cw * .5;
 	player.y = ch - 50;
-	balls[0] = new Ball(cw / 2, ch - 58);
+	balls[0] = new Ball(cw / 2, ch - 50);
 }
 
 function movePlayers() {
@@ -207,16 +218,16 @@ function checkBlocks_BallCollision() {
 		for (let g = 0; g < balls.length; g++) {
 			let yDir = (balls[g].y >= blocks[i].y) ? -1 : 1;
 			let xDir = (balls[g].x >= blocks[i].x) ? -1 : 1;
-			if ( between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
+			if (between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
 				&& between(balls[g].x + (xDir * balls[g].size), blocks[i].x, blocks[i].x + blocks[i].width)
 			) {
 				if (blocks[i] instanceof Block) {
 					currentHits++;
 					hits++;
-					if(balls[g].x + (xDir * balls[g].size) >= blocks[i].x + blocks[i].width){
-						console.log(balls[g].x + (xDir * balls[g].size),blocks[i].x + blocks[i].width)
+					if (balls[g].x + (xDir * balls[g].size) >= blocks[i].x + blocks[i].width) {
+						console.log(balls[g].x + (xDir * balls[g].size), blocks[i].x + blocks[i].width)
 						balls[g].xVel *= -1;
-					}else{
+					} else {
 						balls[g].yVel *= -1;
 					}
 					blocks[i].health--;

@@ -37,7 +37,22 @@
       <li id="keyboard">keyboard</li>
     </ul>
   </div>
-
+  
+  <div id="menuPause" class="menu">
+    <ul>
+      <li id="resume" onclick="unpause()">resume</li>
+      <li id="exit" onclick="window.close()">exit</li>
+    </ul>
+  </div>
+  
+  <div id="gameOverMenu" class="menu">
+    <h1>your score is : <span id="gameOverScore"></span> | recored by your hits </h1>
+    <ul>
+      <li id="resume" onclick="window.location.reload()">restart</li>
+      <li id="exit" onclick="window.close()">exit</li>
+    </ul>
+  </div>
+  
   <div class="cont">
     <div id="alert">ready</div>
   </div>

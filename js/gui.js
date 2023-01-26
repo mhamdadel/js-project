@@ -1,6 +1,7 @@
 let menu = document.getElementById("menu");
 let menuLevel = document.getElementById("menuLevel");
 let menuControl = document.getElementById("menuControl");
+let menuPause = document.getElementById("menuPause");
 
 let contOfAlert = document.getElementsByClassName("cont")[0];
 let alert = document.getElementById("alert");
@@ -18,6 +19,10 @@ let menuControls = {
     mouse: document.getElementById("mouse"),
     keyboard: document.getElementById("keyboard"),
 }
+let menuPauses = {
+    mouse: document.getElementById("mouse"),
+    keyboard: document.getElementById("keyboard"),
+}
 
 
 function startGame() {
@@ -32,6 +37,17 @@ function startGame() {
         }, 1000);
     }, 1000);
 }
+
+
+
+document.addEventListener("keyup",function (e){
+	if (e.key  === "Escape" && gameOver == 0 && player.health > 0 ){
+		pause();
+	}else if (e.key  === "Escape" && gameOver == 1 && player.health > 0 ){
+		unpause(); 
+	}
+});
+
 
 for (const option in menuOptions) {
     if (menuOptions[option]) {

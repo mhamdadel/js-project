@@ -7,7 +7,7 @@ class Ball {
         this.xVel = 0;
         this.yVel = 0;
         this.decel = 0.04;
-        this.size = 10;
+        this.size = 5;
         this.cooldown = 0;
     }
 

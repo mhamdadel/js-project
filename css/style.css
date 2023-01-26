@@ -91,14 +91,9 @@ ul li {
 	cursor: pointer;
 }
 
-#menuLevel {
+#menuLevel, #menuPause,#menuControl,#gameOverMenu {
 	display: none;
 }
-
-#menuControl {
-	display: none;
-}
-
 
 .cont {
 	z-index: 10001;
