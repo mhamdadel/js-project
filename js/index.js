@@ -9,6 +9,7 @@ let err = document.getElementById("err");
 let heartCounter = document.getElementById("heartCounter");
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
+let gameStarted = 0;
 let gameOver = 0;
 let wDown = false;
 let sDown = false;
@@ -19,6 +20,7 @@ let blockWidthNow = 100;
 let blocks = [];
 let bonuses = [];
 let balls = [];
+let bullets = [];
 let makeBlock = 2;
 let hits = 0;
 let currentHits = 0;
@@ -28,6 +30,7 @@ let movementControl = 1;
 let newRowOfBlockEvery = 50;
 
 player = new Player(cw * .5 - 75, ch - 50);
+gun = new Gun();
 balls[0] = new Ball(cw / 2, ch - 50);
 
 
@@ -40,17 +43,20 @@ function start() {
 	} else if (movementControl === 2) {
 		checkKeyboardStatus();
 	}
-
 	checkPlayersBounds();
 	checkBallBounds();
+	checkBulletBounds();
 	checkPlayers_BallCollision();
 	checkBlocks_BallCollision();
 	checkBonuse_PlayerCollision();
+	checkBlock_BulletCollision();
 	movePlayers();
 	moveBall();
 	renderPlayers();
 	renderBall();
 	renderRowOfBlocks();
+	bulletMovement();
+	c.save();
 	heartCounter.innerText = player.health;
 
 	if (bonuses.length > 0) {
@@ -92,7 +98,6 @@ function unpause() {
 function pause() {
 	gameOver = 1
 	menuPause.style.display = "block";
-	console.log("pause")
 }
 
 function renderBlocks() {
@@ -177,6 +182,13 @@ function mouse() {
 			player.x -= player.maxSpeed;
 		}
 	});
+	canvas.addEventListener("click", function (e) {
+		gun.x1 = player.x + 5;
+		gun.y1 = player.y + (player.height / 2);
+		gun.x2 = player.x + player.width - 5;
+		gun.y2 = player.y + (player.height / 2);
+		gun.fire();
+	});
 }
 
 function checkBonuse_PlayerCollision() {
@@ -195,7 +207,6 @@ function checkBonuse_PlayerCollision() {
 				player.width *= .85;
 			} else if (bon instanceof TribleBall) {
 				bonuses.splice(bonuses.indexOf(bon), 1);
-				console.log("asd");
 				balls.reduce(function (prev, ball) {
 					let prevBall = new Ball(ball.x - 20, ball.y);
 					prevBall.xVel += 3;
@@ -216,17 +227,21 @@ function checkBonuse_PlayerCollision() {
 function checkBlocks_BallCollision() {
 	for (let i = 0; i < blocks.length; i++) {
 		for (let g = 0; g < balls.length; g++) {
-			let yDir = (balls[g].y >= blocks[i].y) ? -1 : 1;
-			let xDir = (balls[g].x >= blocks[i].x) ? -1 : 1;
+			let yDir = (balls[g].y >= blocks[i]?.y) ? -1 : 1;
+			let xDir = (balls[g].x >= blocks[i]?.x) ? -1 : 1;
 			if (between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
 				&& between(balls[g].x + (xDir * balls[g].size), blocks[i].x, blocks[i].x + blocks[i].width)
 			) {
 				if (blocks[i] instanceof Block) {
 					currentHits++;
 					hits++;
-					if (balls[g].x + (xDir * balls[g].size) >= blocks[i].x + blocks[i].width) {
-						console.log(balls[g].x + (xDir * balls[g].size), blocks[i].x + blocks[i].width)
+					if (
+						between(balls[g].y + (yDir * balls[g].size), blocks[i].y, blocks[i].y + blocks[i].height)
+						&&
+						(balls[g].x > blocks[i].x + blocks[i].width || balls[g].x < blocks[i].x)
+					) {
 						balls[g].xVel *= -1;
+						balls[g].y = blocks[i].y + blocks[i].height + 1;
 					} else {
 						balls[g].yVel *= -1;
 					}
@@ -253,30 +268,48 @@ function checkBlocks_BallCollision() {
 					}
 				}
 			}
-
-
 		}
 	}
-
 }
 
 function checkPlayers_BallCollision() {
-	for (let i = 0; i < balls.length; i++) {
-		let yDir = (balls[i].y > player.y) ? -1 : 1;
-		let xDir = (balls[i].x > player.x) ? -1 : 1;
-		if (between(balls[i].y + (yDir * balls[i].size), player.y, player.y + player.height)
-			&& between(balls[i].x + (xDir * balls[i].size), player.x, player.x + player.width)
-		) {
-			if (player instanceof Player) {
-				xMinOrPos = balls[i].x < (player.x + player.width / 2) ? -1 : balls[i].x > (player.x + player.width / 2) ? 1 : 0;
-				xDirBall = ((player.x + player.width / 2) / balls[i].x) / 2;
-				if (xMinOrPos > 0) {
-					balls[i].xVel = (((xMinOrPos) * (balls[i].x - (player.width / 2 + player.x)) / player.width)) * balls[i].xspeed;
+	for (let g = 0; g < blocks.length; g++) {
+		for (let i = 0; i < balls.length; i++) {
+			let yDir = (balls[i].y > player.y) ? -1 : 1;
+			let xDir = (balls[i].x > player.x) ? -1 : 1;
+			if (between(balls[i].y + (yDir * balls[i].size), player.y, player.y + player.height)
+				&& between(balls[i].x + (xDir * balls[i].size), player.x, player.x + player.width)
+			) {
+				if (player instanceof Player) {
+					xMinOrPos = balls[i].x < (player.x + player.width / 2) ? -1 : balls[i].x > (player.x + player.width / 2) ? 1 : 0;
+					xDirBall = ((player.x + player.width / 2) / balls[i].x) / 2;
+					if (xMinOrPos > 0) {
+						balls[i].xVel = (((xMinOrPos) * (balls[i].x - (player.width / 2 + player.x)) / player.width)) * balls[i].xspeed;
 
-				} else {
-					balls[i].xVel = ((xMinOrPos) * Math.abs(((balls[i].x - player.x) / player.width) - 1) + .5) * balls[i].xspeed;
+					} else {
+						balls[i].xVel = ((xMinOrPos) * Math.abs(((balls[i].x - player.x) / player.width) - 1) + .5) * balls[i].xspeed;
+					}
+					balls[i].yVel = -1 * balls[i].speed;
 				}
-				balls[i].yVel = -1 * balls[i].speed;
+			}
+		}
+	}
+}
+
+function checkBlock_BulletCollision() {
+	for (let i = 0; i < blocks.length; i++) {
+		for (let g = 0; g < bullets.length; g++) {
+			if (between(bullets[g].y, blocks[i].y, blocks[i].y + blocks[i].height)
+				&& between(bullets[g].x, blocks[i].x, blocks[i].x + blocks[i].width)
+			) {
+				if (blocks[i] instanceof Block) { 
+					blocks[i].health--;
+					currentHits++;
+					bullets.splice(g,1);
+					if (blocks[i].health <= 0) {
+						blocks.splice(i, 1);
+					}
+				}
 			}
 		}
 	}
@@ -322,6 +355,14 @@ function checkBallBounds() {
 			} else {
 				balls.splice(i, 1);
 			}
+		}
+	}
+}
+
+function checkBulletBounds() {
+	for (let i = 0; i < bullets.length; i++) {
+		if (bullets[i].y >= canvas.height) {
+			bullets.splice(i, 1);
 		}
 	}
 }
@@ -436,6 +477,14 @@ function renderPlayers() {
 }
 
 function renderBackground() {
+	// let img = new Image();
+	// img.src = "images/background.jpg";
+	// c.save();
+	// c.beginPath();
+	// c.drawImage(img, 0, 0,canvas.width,canvas.height);
+	// c.closePath();
+	// c.restore();
+
 	c.save();
 	c.fillStyle = "#66aa66";
 	c.fillRect(0, 0, canvas.width, canvas.height);

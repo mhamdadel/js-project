@@ -32,6 +32,7 @@ function startGame() {
             alert.innerText = ("go");
             setTimeout(() => {
                 contOfAlert.style.display = "none";
+                gameStarted = 1;
                 let init = requestAnimationFrame(start);
             }, 1000);
         }, 1000);
